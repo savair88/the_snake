@@ -47,7 +47,7 @@ class GameObject():
 
     def draw(self):
         """Рисуем объект в рабочем пространстве."""
-        rect = pg.Rect(self.position    , (GRID_SIZE, GRID_SIZE))
+        rect = pg.Rect(self.position, (GRID_SIZE, GRID_SIZE))
         pg.draw.rect(screen, self.body_color, rect)
         pg.draw.rect(screen, BORDER_COLOR, rect, 1)
 
@@ -125,7 +125,6 @@ class Snake(GameObject):
 
     def draw(self):
         """Отражение объекта на экране"""
-
         # Отрисовка головы змейки
         head_rect = pg.Rect(self.position[0], (GRID_SIZE, GRID_SIZE))
         pg.draw.rect(screen, self.body_color, head_rect)
@@ -166,12 +165,14 @@ def handle_keys(snake):
                 pg.quit()
                 raise SystemExit
 
+
 def record_length_func(snake_length):
-    """Фиксирует максимальную длину змейки в рамках игровой сессии  """
+    """Фиксирует максимальную длину змейки в рамках игровой сессии."""
     global record_length
     if snake_length > record_length:
         record_length = snake_length
     return record_length
+
 
 def main():
     """Логика работы приложения"""
@@ -189,7 +190,10 @@ def main():
             apple = Apple(APPLE_COLOR)
         if snake.get_head_position() in snake.position[1:]:
             snake.reset()
-        pg.display.set_caption(f'Змейка, для выхода закрой окно или нажми Escape. Рекорд: {record_length_func(snake.length)}')
+        pg.display.set_caption(
+            f'Змейка, для выхода закрой окно или нажми Escape.'
+            f'Рекорд: {record_length_func(snake.length)}'
+        )
         apple.draw()
         snake.draw()
         pg.display.update()
