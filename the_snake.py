@@ -27,7 +27,7 @@ screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
 screen.fill(BOARD_BACKGROUND_COLOR)
 
 # Заголовок окна игрового поля:
-pg.display.set_caption('Змейка, для выхода закрой окно или нажми Escape')
+# pg.display.set_caption('Змейка, для выхода закрой окно или нажми Escape')
 
 # Настройка времени:
 clock = pg.time.Clock()
@@ -36,7 +36,7 @@ clock = pg.time.Clock()
 class GameObject():
     """Родительский класс для объектов рабочего поля."""
 
-    def __init__(self, color):
+    def __init__(self, color=BOARD_BACKGROUND_COLOR):
         """
         Два атрибута:
             * начальная позиция - задается случайно,
@@ -55,7 +55,7 @@ class GameObject():
 class Apple(GameObject):
     """Класс-яблоко. Будем его искать и есть"""
 
-    def __init__(self, color):
+    def __init__(self, color=APPLE_COLOR):
         """
         Оставляем атрибут родительского класса со случайным расположением.
         Переопределяем атрибут с цветом объекта.
@@ -73,7 +73,7 @@ class Apple(GameObject):
 class Snake(GameObject):
     """Класс-змейка. Будет искать яблоко."""
 
-    def __init__(self, color):
+    def __init__(self, color=SNAKE_COLOR):
         """
         Атрибуты класса-змейка:
             * Не понимаю зачем нам тут super().__init__(),
@@ -191,7 +191,7 @@ def main():
         if snake.get_head_position() in snake.position[1:]:
             snake.reset()
         pg.display.set_caption(
-            f'Змейка, для выхода закрой окно или нажми Escape.'
+            f'Змейка, для выхода закрой окно или нажми Escape. '
             f'Рекорд: {record_length_func(snake.length)}'
         )
         apple.draw()
