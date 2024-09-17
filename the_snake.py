@@ -62,7 +62,7 @@ class GameObject:
 class Apple(GameObject):
     """Класс-яблоко. Будем его искать и есть"""
 
-    def __init__(self, position_taken=((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2)), color=APPLE_COLOR):
+    def __init__(self, position_taken=CENTER_CELL, color=APPLE_COLOR):
         """
         Оставляем атрибут родительского класса со случайным расположением.
         Переопределяем атрибут с цветом объекта.
@@ -70,7 +70,7 @@ class Apple(GameObject):
         super().__init__(color)
         self.position = self.randomize_position(position_taken)
 
-    def randomize_position(self, position_taken=((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))):
+    def randomize_position(self, position_taken=CENTER_CELL):
         """
         Метод для определения начальной позиции объекта.
         Учитывает поля занятые змейкой.
@@ -86,8 +86,6 @@ class Apple(GameObject):
                 if coordinate not in position_taken:
                     break
         return coordinate
-
-
 
 
 class Snake(GameObject):
@@ -126,7 +124,9 @@ class Snake(GameObject):
         когда змейка достигает края рабочего пространства.
         """
         x, y = self.get_head_position()
-        self.last = self.positions[-1] if self.length > 1 else self.positions[0]
+        self.last = (self.positions[-1] if self.length > 1
+                     else self.positions[0]
+                     )
         new_head_position = (
             (x + self.direction[0] * GRID_SIZE) % SCREEN_WIDTH,
             (y + self.direction[1] * GRID_SIZE) % SCREEN_HEIGHT
