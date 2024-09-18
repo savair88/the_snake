@@ -40,23 +40,29 @@ class GameObject:
             * начальная позиция - задается случайно,
             * цвет объекта - переопределяется внутри дочернего класса.
         """
-        self.position = ((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))
+        self.position = CENTER_CELL
         self.body_color = color
-        self.last = None
 
-    def draw(self, position_to_draw_rect):
+    def draw_a_cell(self, position, color=None, border_color=None):
         """Рисуем объект в рабочем пространстве."""
-        if isinstance(position_to_draw_rect, tuple):
-            x, y = position_to_draw_rect
-        else:
-            x, y = position_to_draw_rect[0][0], position_to_draw_rect[0][1]
-        rect = pg.Rect(x, y, GRID_SIZE, GRID_SIZE)
-        pg.draw.rect(screen, self.body_color, rect)
-        pg.draw.rect(screen, BORDER_COLOR, rect, 1)
+        color = color or self.body_color
+        border_color = border_color or BORDER_COLOR
+        rect = pg.Rect(position, (GRID_SIZE, GRID_SIZE))
+        pg.draw.rect(screen, color, rect)
+        pg.draw.rect(screen, border_color, rect, 1)
 
-        if self.last:
-            last_rect = pg.Rect(self.last, (GRID_SIZE, GRID_SIZE))
-            pg.draw.rect(screen, BOARD_BACKGROUND_COLOR, last_rect)
+    def draw(self):
+        """
+        Абстрактный метод, который предназначен
+        для переопределения в дочерних классах.
+        Этот метод должен определять, как объект
+        будет отрисовываться на экране.
+        """
+        pass
+
+        # if self.last:
+        #     last_rect = pg.Rect(self.last, (GRID_SIZE, GRID_SIZE))
+        #     pg.draw.rect(screen, BOARD_BACKGROUND_COLOR, last_rect)
 
 
 class Apple(GameObject):
@@ -68,24 +74,24 @@ class Apple(GameObject):
         Переопределяем атрибут с цветом объекта.
         """
         super().__init__(color)
-        self.position = self.randomize_position(position_taken)
+        self.randomize_position(position_taken)
 
-    def randomize_position(self, position_taken=CENTER_CELL):
+    def randomize_position(self, positions):
         """
         Метод для определения начальной позиции объекта.
         Учитывает поля занятые змейкой.
         """
         while True:
-            x = randint(0, GRID_WIDTH - 1) * GRID_SIZE
-            y = randint(0, GRID_HEIGHT - 1) * GRID_SIZE
-            coordinate = (x, y)
-            if isinstance(position_taken, tuple):
-                if coordinate != position_taken:
-                    break
-            else:
-                if coordinate not in position_taken:
-                    break
-        return coordinate
+            self.position = (
+                randint(0, GRID_WIDTH - 1) * GRID_SIZE,
+                randint(0, GRID_HEIGHT - 1) * GRID_SIZE
+            )
+            if self.position not in positions:
+                break
+
+    def draw(self):
+        """Рисует яблоко"""
+        self.draw_a_cell(self.position)
 
 
 class Snake(GameObject):
@@ -105,9 +111,10 @@ class Snake(GameObject):
             * last - информация о последнем элементе объекта
         """
         super().__init__(color)
+        self.positions = [self.position]
         self.length = 1
         self.direction = LEFT
-        self.positions = [((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))]
+        self.last = None
 
     def update_direction(self, new_direction):
         """Изменяет направление движения"""
@@ -124,9 +131,7 @@ class Snake(GameObject):
         когда змейка достигает края рабочего пространства.
         """
         x, y = self.get_head_position()
-        self.last = (self.positions[-1] if self.length > 1
-                     else self.positions[0]
-                     )
+        self.last = self.positions[-1]
         new_head_position = (
             (x + self.direction[0] * GRID_SIZE) % SCREEN_WIDTH,
             (y + self.direction[1] * GRID_SIZE) % SCREEN_HEIGHT
@@ -135,13 +140,23 @@ class Snake(GameObject):
         if len(self.positions) > self.length:
             self.positions.pop()
 
+    def draw(self):
+        """Рисует змейку"""
+        for position in self.positions:
+            self.draw_a_cell(position)
+        if self.last:
+            self.draw_a_cell(
+                self.last,
+                BOARD_BACKGROUND_COLOR,
+                BOARD_BACKGROUND_COLOR
+            )
+
     def reset(self):
         """Сброс змейки к начальному состоянию."""
-        screen.fill(BOARD_BACKGROUND_COLOR)
         self.length = 1
-        self.positions = [((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))]
+        self.position = CENTER_CELL
+        self.positions = [self.position]
         self.direction = LEFT
-        self.last = None
 
 
 def handle_keys(snake):
@@ -154,7 +169,7 @@ def handle_keys(snake):
             if event.key == pg.K_ESCAPE:
                 pg.quit()
                 raise SystemExit
-            elif event.key == pg.K_UP and snake.direction != DOWN:
+            if event.key == pg.K_UP and snake.direction != DOWN:
                 snake.update_direction(UP)
             elif event.key == pg.K_DOWN and snake.direction != UP:
                 snake.update_direction(DOWN)
@@ -181,18 +196,19 @@ def main():
         clock.tick(SPEED)
         handle_keys(snake)
         snake.move()
-        if apple.position == snake.positions[0]:
+        if apple.position == snake.get_head_position():
             snake.length += 1
-            apple.position = apple.randomize_position(snake.positions)
+            apple.randomize_position(snake.positions)
         elif snake.get_head_position() in snake.positions[4:]:
             snake.reset()
-            apple.position = apple.randomize_position(snake.positions)
+            apple.randomize_position(snake.positions)
+            screen.fill(BOARD_BACKGROUND_COLOR)
         pg.display.set_caption(
             f'Змейка, для выхода нажми Escape. '
             f'Рекорд: {record_length_func(snake.length)}'
         )
-        snake.draw(snake.positions)
-        apple.draw(apple.position)
+        snake.draw()
+        apple.draw()
         pg.display.update()
 
 
