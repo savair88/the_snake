@@ -17,7 +17,7 @@ RIGHT = (1, 0)
 # Изменение направления движения.
 # Проверяем текущее направление движение и нажатую клавишу.
 # Для каждой пары однозначно задаем возможный вариант движения.
-CHANGE_DIRECTION = {
+TURNS = {
     (LEFT, pg.K_UP): UP,
     (RIGHT, pg.K_UP): UP,
     (LEFT, pg.K_DOWN): DOWN,
@@ -28,7 +28,13 @@ CHANGE_DIRECTION = {
     (UP, pg.K_RIGHT): RIGHT,
 }
 
-BOARD_BACKGROUND_COLOR = (100, 100, 100)
+ALL_CELLS = set(
+    (x * GRID_SIZE, y * GRID_SIZE)
+    for x in range(GRID_WIDTH)
+    for y in range(GRID_HEIGHT)
+)
+
+BOARD_BACKGROUND_COLOR = (150, 150, 150)
 BORDER_COLOR = (93, 216, 228)
 APPLE_COLOR = (255, 0, 0)
 SNAKE_COLOR = (0, 255, 0)
@@ -57,13 +63,14 @@ class GameObject:
         self.position = CENTER_CELL
         self.body_color = color
 
-    def draw_a_cell(self, position, color=None, draw_border=True):
+    def draw_a_cell(self, position, color=None):
         """Рисуем объект в рабочем пространстве."""
-        color = color or self.body_color
         rect = pg.Rect(position, (GRID_SIZE, GRID_SIZE))
-        pg.draw.rect(screen, color, rect)
-        if draw_border:
+        if not color:
+            pg.draw.rect(screen, self.body_color, rect)
             pg.draw.rect(screen, BORDER_COLOR, rect, 1)
+        else:
+            pg.draw.rect(screen, color, rect)
 
     def draw(self):
         """
@@ -90,10 +97,7 @@ class Apple(GameObject):
         Метод для определения начальной позиции объекта.
         Учитывает поля занятые змейкой.
         """
-        ALL_CELLS = set((x * GRID_SIZE, y * GRID_SIZE)
-                        for x in range(GRID_WIDTH)
-                        for y in range(GRID_HEIGHT))
-        self.position = choice(list(ALL_CELLS - set(positions)))
+        self.position = choice(tuple(ALL_CELLS - set(positions)))
 
     def draw(self):
         """Рисует яблоко"""
@@ -113,8 +117,7 @@ class Snake(GameObject):
             * last - информация о последнем элементе объекта
         """
         super().__init__(color)
-        self.positions = [self.position]
-        self.direction = LEFT
+        self.reset()
 
     def update_direction(self, new_direction):
         """Изменяет направление движения"""
@@ -133,20 +136,23 @@ class Snake(GameObject):
         x, y = self.get_head_position()
         x_delta, y_delta = self.direction
         self.last = self.positions[-1]
-        self.positions.insert(0,
-                              (((x + x_delta * GRID_SIZE) % SCREEN_WIDTH),
-                               ((y + y_delta * GRID_SIZE) % SCREEN_HEIGHT))
-                              )
+        self.positions.insert(
+            0,
+            (
+                (x + x_delta * GRID_SIZE) % SCREEN_WIDTH,
+                (y + y_delta * GRID_SIZE) % SCREEN_HEIGHT
+            )
+        )
         if len(self.positions) > self.length:
             self.positions.pop()
 
     def draw(self):
         """Рисует змейку"""
         self.draw_a_cell(self.get_head_position())
-        if self.last:
-            self.draw_a_cell(self.last,
-                             BOARD_BACKGROUND_COLOR,
-                             draw_border=False)
+        self.draw_a_cell(
+            self.last,
+            BOARD_BACKGROUND_COLOR
+        )
 
     def reset(self):
         """Сброс змейки к начальному состоянию."""
@@ -165,7 +171,7 @@ def handle_keys(snake):
             if event.key == pg.K_ESCAPE:
                 pg.quit()
                 raise SystemExit
-            snake.update_direction(CHANGE_DIRECTION.get(
+            snake.update_direction(TURNS.get(
                 (snake.direction, event.key),
                 snake.direction)
             )
@@ -180,10 +186,8 @@ def record_length_func(snake_length):
 
 def main():
     """Логика работы приложения"""
-    # Инициализация pg:
     pg.init()
     snake = Snake()
-    snake.reset()
     apple = Apple(snake.positions)
     while True:
         clock.tick(SPEED)
